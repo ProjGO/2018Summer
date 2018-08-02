@@ -1,7 +1,15 @@
+#Personal Configuration
+*.vs
+.vs/*
+2018Summer/.vs/*
+2018Summer/°®¶÷Ë¹Ì¹Æå/Debug/*
+2018Summer/°®¶÷Ë¹Ì¹Æå/°®¶÷Ë¹Ì¹Æå/Debug/*
+*.sln
+*.vcxproj
+*.filters
+
 # Prerequisites
 *.d
-*.vs
-*.sln
 
 # Compiled Object files
 *.slo
