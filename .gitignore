@@ -1,5 +1,10 @@
 #Personal Configuration
 *.vs
+*.tlog
+*.idb
+*.pdb
+*.log
+*.ilk
 .vs/*
 2018Summer/.vs/*
 2018Summer/°®¶÷Ë¹Ì¹Æå/Debug/*
