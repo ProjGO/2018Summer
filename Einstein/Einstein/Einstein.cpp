@@ -121,11 +121,18 @@ public:
 	int GetDistance(bool player, int piece)
 	{
 		if (player)
-			return 4 - positions[1][piece].x - positions[1][piece].y;
+			return 8 - positions[1][piece].x - positions[1][piece].y;
 		else
 			return positions[0][piece].x + positions[0][piece].y;
 	}
 
+	int GetDistance(bool player, int x, int y)
+	{
+		if (player)
+			return 8 - x - y;
+		else
+			return x + y;
+	}
 	Pos GetPosition(bool player, int piece)
 	{
 		return positions[player][piece];
@@ -176,8 +183,10 @@ void move(int board[5][5], int dx, int dy)
 	old = 0;
 }
 
+int cnt = 0;
 bool simulate(situation cur)
 {
+	cnt++;
 	while (cur.board[0][0] >= 0 && cur.board[4][4] <= 0 && cur.alive_cnt[0] && cur.alive_cnt[1])
 	{
 		int t = rand() % cur.alive_cnt[!cur.player] + 1;
@@ -221,9 +230,30 @@ bool simulate(situation cur)
 		return !result;
 }
 
-float Evaluate(situation cur)
+float Evaluate(situation cur,int piece,int moveNo)
 {
-	return 0;
+	float ans=0;
+	bool player = !cur.player;
+	int nx=cur.positions[player][piece].x + GetMove(player, moveNo).dx;
+	int ny = cur.positions[player][piece].y + GetMove(player, moveNo).dy;
+	if (cur.board[nx][ny] != 0)
+	{
+		if ((cur.board[nx][ny] > 0) ^ player)
+			ans += 0.5;//吃掉对面的
+		else
+			ans -= 0.5;//吃掉自己的
+	}
+	float risk=0;
+	for (int i = 0; i < 3; i++)
+	{
+		int nnx = nx + GetMove(player, i).dx, nny = GetMove(player, i).dy;
+		if (nnx >= 0 && nnx < 5 && nny >= 0 && nny < 5&&cur.board[nnx][nny]!=0&&((cur.board[nnx][nny]>0)^player))
+			risk += cur.GetProbability(cur.player, cur.board[nnx][nny]);
+	}
+	ans -= risk;
+	if (cur.GetDistance(player, nx, ny) <= 2)
+		ans += 1;
+	return ans;
 }
 
 float UCT(situation *cur)
@@ -255,8 +285,9 @@ float AlphaBeta(situation cur, int depth, float alpha, float beta)
 				int ny = cur.positions[nextPlayer][piece].y + GetMove(nextPlayer, moveNo).dy;
 				if (nx >= 0 && ny >= 0 && nx < 5 && ny < 5)
 				{
+					float eval = Evaluate(cur, piece, moveNo);
 					situation next = situation(cur, piece, moveNo);
-					val = AlphaBeta(next, depth - 1, -beta, -alpha) + Evaluate(cur);
+					val = 0.5*AlphaBeta(next, depth - 1, -beta, -alpha) + (eval+0.5)/4;
 					if (val >= beta)
 						return beta;
 					if (val > alpha)
@@ -285,16 +316,16 @@ void InitializeBoard(int red[6], int blue[6])
 	Board[2][4] = -blue[5];
 }
 
-void print()
+void print(int board[5][5])
 {
 	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			if (Board[i][j] >= 0)
-				cout << " " << Board[i][j] << " ";
+			if (board[i][j] >= 0)
+				cout << " " << board[i][j] << " ";
 			else
-				cout << Board[i][j] << " ";
+				cout << board[i][j] << " ";
 		}
 		printf("\n");
 	}
@@ -333,7 +364,6 @@ int main()
 	string cmd;
 	while (getline(cin,cmd)&&cmd != "stop")
 	{
-		//print();
 		stringstream ss(cmd);
 		if (cur.player == !ourColor)
 		{
@@ -349,8 +379,9 @@ int main()
 				if (nx >= 0 && ny >= 0 && nx < 5 && ny < 5)
 				{
 					situation next = situation(cur);
+					float eval = Evaluate(cur, piece, i);
 					move(next, piece, i);
-					float val = AlphaBeta(next, 5, -1.0f, 1.0f);
+					float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f)+(eval+0.5)/4;
 					if (val >= bestValue)
 					{
 						bestMove = GetMove(ourColor, i);
@@ -367,7 +398,8 @@ int main()
 			Board[nx][ny] = Board[x][y];
 			Board[x][y] = 0;
 			cout << "move " << x<<y << " " << nx<<ny << " " << piece << endl;
-			//print();
+			cout << cnt << endl;
+			print(Board);
 		}
 		else
 		{
@@ -375,6 +407,7 @@ int main()
 			ss >> temp >> old >> niu >> piece;
 			move(Board, old, niu);
 			cur = situation(Board, !ourColor);
+			print(Board);
 		}
 	}
 }
