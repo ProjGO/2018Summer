@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ char name[50] = "AI";
 
 typedef struct Pos {
 	int x, y;
-	Pos(int x=0, int y=0) :x(x), y(y) {};
+	Pos(int x=-1, int y=-1) :x(x), y(y) {};
 	bool operator == (const Pos &rhs) { return x == rhs.x&&y == rhs.y; }
 } Pos;
 
@@ -183,10 +184,10 @@ void move(int board[5][5], int dx, int dy)
 	old = 0;
 }
 
-int cnt = 0;
+int cnnt = 0;
 bool simulate(situation cur)
 {
-	cnt++;
+	cnnt++;
 	while (cur.board[0][0] >= 0 && cur.board[4][4] <= 0 && cur.alive_cnt[0] && cur.alive_cnt[1])
 	{
 		int t = rand() % cur.alive_cnt[!cur.player] + 1;
@@ -236,6 +237,7 @@ float Evaluate(situation cur,int piece,int moveNo)
 	bool player = !cur.player;
 	int nx=cur.positions[player][piece].x + GetMove(player, moveNo).dx;
 	int ny = cur.positions[player][piece].y + GetMove(player, moveNo).dy;
+
 	if (cur.board[nx][ny] != 0)
 	{
 		if ((cur.board[nx][ny] > 0) ^ player)
@@ -243,6 +245,7 @@ float Evaluate(situation cur,int piece,int moveNo)
 		else
 			ans -= 0.5;//³Ôµô×Ô¼ºµÄ
 	}
+
 	float risk=0;
 	for (int i = 0; i < 3; i++)
 	{
@@ -251,6 +254,9 @@ float Evaluate(situation cur,int piece,int moveNo)
 			risk += cur.GetProbability(cur.player, cur.board[nnx][nny]);
 	}
 	ans -= risk;
+
+	ans += (cur.GetDistance(player, piece)-cur.GetDistance(player,piece));
+
 	if (cur.GetDistance(player, nx, ny) <= 2)
 		ans += 1;
 	return ans;
@@ -259,10 +265,10 @@ float Evaluate(situation cur,int piece,int moveNo)
 float UCT(situation *cur)
 {
 	float win=0;
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 50; i++)
 		if (simulate(*cur))
 			win++;
-	float p = (float)win / 100;
+	float p = (float)win / 50;
 	return p;
 }
 
@@ -369,24 +375,49 @@ int main()
 		{
 			int piece;
 			ss >> piece;
+			int pieces[2], cnt = 0;
+			if (cur.positions[ourColor][piece].x != -1)
+			{
+				pieces[0] = piece;
+				cnt = 1;
+			}
+			else
+			{
+				for (int i = piece; i <= 6; i++)
+					if (cur.positions[ourColor][i].x != -1)
+					{
+						pieces[cnt++] = i;
+						break;
+					}
+				for (int i = piece; i >= 0; i--)
+					if (cur.positions[ourColor][i].x != -1)
+					{
+						pieces[cnt++] = i;
+						break;
+					}
+			}
 			Move bestMove;
 			int bestMoveNo;
 			float bestValue = -INF;
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < cnt; i++)
 			{
-				int nx = cur.positions[ourColor][piece].x + GetMove(ourColor, i).dx;
-				int ny = cur.positions[ourColor][piece].y + GetMove(ourColor, i).dy;
-				if (nx >= 0 && ny >= 0 && nx < 5 && ny < 5)
+				for (int j = 0; j < 3; j++)
 				{
-					situation next = situation(cur);
-					float eval = Evaluate(cur, piece, i);
-					move(next, piece, i);
-					float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f)+(eval+0.5)/4;
-					if (val >= bestValue)
+					int nx = cur.positions[ourColor][pieces[i]].x + GetMove(ourColor, j).dx;
+					int ny = cur.positions[ourColor][pieces[i]].y + GetMove(ourColor, j).dy;
+					if (nx >= 0 && ny >= 0 && nx < 5 && ny < 5)
 					{
-						bestMove = GetMove(ourColor, i);
-						bestValue = val;
-						bestMoveNo = i;
+						situation next = situation(cur);
+						float eval = Evaluate(cur, piece, j);
+						move(next, pieces[i], j);
+						float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f) + (eval + 0.5) / 4;
+						if (val >= bestValue)
+						{
+							bestMove = GetMove(ourColor, j);
+							bestValue = val;
+							bestMoveNo = j;
+							piece = pieces[i];
+						}
 					}
 				}
 			}
@@ -398,8 +429,8 @@ int main()
 			Board[nx][ny] = Board[x][y];
 			Board[x][y] = 0;
 			cout << "move " << x<<y << " " << nx<<ny << " " << piece << endl;
-			cout << cnt << endl;
-			print(Board);
+			//cout << cnnt << endl;
+			//print(Board);
 		}
 		else
 		{
@@ -407,7 +438,7 @@ int main()
 			ss >> temp >> old >> niu >> piece;
 			move(Board, old, niu);
 			cur = situation(Board, !ourColor);
-			print(Board);
+			//print(Board);
 		}
 	}
 }
