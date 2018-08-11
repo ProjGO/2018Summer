@@ -10,7 +10,7 @@ using namespace std;
 
 const int INF = 10000;
 
-const int MaxDepth = 4;
+//const int MaxDepth = 4;
 
 const int MIN_SIM = 5;
 const int MAX_SIM = 100;
@@ -262,10 +262,10 @@ float Evaluate(situation cur,int piece,int moveNo)
 	return ans;
 }
 
-float UCT(situation *cur)
+float MC(situation *cur)
 {
 	float win=0;
-	for (int i = 0; i < 50; i++)
+	for (int i = 0; i < 100; i++)
 		if (simulate(*cur))
 			win++;
 	float p = (float)win / 50;
@@ -277,7 +277,7 @@ float AlphaBeta(situation cur, int depth, float alpha, float beta)
 	float val;
 	if (depth == 0)
 	{
-		float p = UCT(&cur);
+		float p = MC(&cur);
 		return p;
 	}
 	bool nextPlayer = !cur.player;
@@ -411,6 +411,7 @@ int main()
 						float eval = Evaluate(cur, piece, j);
 						move(next, pieces[i], j);
 						float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f) + (eval + 0.5) / 4;
+						printf("%d %d %f\n", pieces[i],j ,val);
 						if (val >= bestValue)
 						{
 							bestMove = GetMove(ourColor, j);
@@ -429,8 +430,8 @@ int main()
 			Board[nx][ny] = Board[x][y];
 			Board[x][y] = 0;
 			cout << "move " << x<<y << " " << nx<<ny << " " << piece << endl;
-			//cout << cnnt << endl;
-			//print(Board);
+			cout << cnnt << endl;
+			print(Board);
 		}
 		else
 		{
@@ -438,7 +439,7 @@ int main()
 			ss >> temp >> old >> niu >> piece;
 			move(Board, old, niu);
 			cur = situation(Board, !ourColor);
-			//print(Board);
+			print(Board);
 		}
 	}
 }
