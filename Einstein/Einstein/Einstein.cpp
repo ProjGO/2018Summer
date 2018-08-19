@@ -1,3 +1,6 @@
+//#define DEBUG
+//#define DEBUG1
+
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -35,6 +38,7 @@ class situation;
 void move(situation &cur, int piece, int moveNo);
 void move(int board[5][5], int dx, int dy);
 Move GetMove(bool player, int moveNo);
+void print(int board[5][5]);
 
 int Board[5][5];
 bool ourColor, firstColor;
@@ -220,6 +224,10 @@ bool simulate(situation cur)
 		}
 		move(cur, piece, moveNo);
 	}
+#ifdef DEBUG1
+	print(cur.board);
+	printf("\n");
+#endif
 	bool result;
 	if (cur.board[4][4] > 0 || cur.alive_cnt[false] == 0)
 		result = true;
@@ -259,6 +267,8 @@ float Evaluate(situation cur,int piece,int moveNo)
 
 	if (cur.GetDistance(player, nx, ny) <= 2)
 		ans += 1;
+	if (cur.GetDistance(player, nx, ny) == 0)
+		ans += 1;
 	return ans;
 }
 
@@ -268,7 +278,7 @@ float MC(situation *cur)
 	for (int i = 0; i < 100; i++)
 		if (simulate(*cur))
 			win++;
-	float p = (float)win / 50;
+	float p = (float)win / 100;
 	return p;
 }
 
@@ -337,6 +347,22 @@ void print(int board[5][5])
 	}
 }
 
+void test(situation cur)
+{
+	int start, end;
+	start = end = clock();
+	int win = 0, cnt = 0;
+	while (end - start <= 5000)
+	{
+		if (simulate(cur))
+			win++;
+		cnt++;
+		end = clock();
+	}
+	cout << cnt << endl;
+	cout << win << endl;
+}
+
 int main()
 {
 	srand(time(NULL));
@@ -364,6 +390,9 @@ int main()
 	}
 	InitializeBoard(red, blue);
 	situation cur=situation(Board,ourColor);
+#ifdef DEBUG1
+	test(cur);
+#endif
 	if (firstColor == ourColor)
 		cur.player = !ourColor;
 	getchar();
@@ -398,7 +427,7 @@ int main()
 			}
 			Move bestMove;
 			int bestMoveNo;
-			float bestValue = -INF;
+			float bestValue = -INF; 
 			for (int i = 0; i < cnt; i++)
 			{
 				for (int j = 0; j < 3; j++)
@@ -411,7 +440,9 @@ int main()
 						float eval = Evaluate(cur, piece, j);
 						move(next, pieces[i], j);
 						float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f) + (eval + 0.5) / 4;
+#ifdef DEBUG
 						printf("%d %d %f\n", pieces[i],j ,val);
+#endif
 						if (val >= bestValue)
 						{
 							bestMove = GetMove(ourColor, j);
@@ -430,8 +461,10 @@ int main()
 			Board[nx][ny] = Board[x][y];
 			Board[x][y] = 0;
 			cout << "move " << x<<y << " " << nx<<ny << " " << piece << endl;
+#ifdef DEBUG
 			cout << cnnt << endl;
 			print(Board);
+#endif
 		}
 		else
 		{
@@ -439,7 +472,9 @@ int main()
 			ss >> temp >> old >> niu >> piece;
 			move(Board, old, niu);
 			cur = situation(Board, !ourColor);
+#ifdef DEBUG
 			print(Board);
+#endif
 		}
 	}
 }
