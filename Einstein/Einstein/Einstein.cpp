@@ -1,4 +1,4 @@
-//#define DEBUG
+#define DEBUG
 //#define DEBUG1
 
 #include <cstdio>
@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include <stack>
 
 using namespace std;
 
@@ -249,7 +250,11 @@ float Evaluate(situation cur,int piece,int moveNo)
 	if (cur.board[nx][ny] != 0)
 	{
 		if ((cur.board[nx][ny] > 0) ^ player)
+		{
 			ans += 0.5;//吃掉对面的
+			if (cur.GetDistance(cur.player, abs(cur.board[nx][ny])) <= 2)
+				ans += 0.5;
+		}
 		else
 			ans -= 0.5;//吃掉自己的
 	}
@@ -275,10 +280,10 @@ float Evaluate(situation cur,int piece,int moveNo)
 float MC(situation *cur)
 {
 	float win=0;
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 300; i++)
 		if (simulate(*cur))
 			win++;
-	float p = (float)win / 100;
+	float p = (float)win / 300;
 	return p;
 }
 
@@ -363,24 +368,26 @@ void test(situation cur)
 	cout << win << endl;
 }
 
+stack <class situation> History;
+
 int main()
 {
 	srand(time(NULL));
 	int red[6], blue[6];
 	string temp;
-	cin >> temp;
-	std::cout << name << endl;//name
-	cin >> temp;//先手
+	cin >> temp;//输入"name?"
+	std::cout << name << endl;//输出名字
+	cin >> temp;//输入先手颜色
 	if (temp == "redfirst")
 		firstColor = true;
 	else
 		firstColor = false;
-	cin >> temp;//电脑的颜色
+	cin >> temp;//输入电脑的颜色
 	if (temp == "red")
 		ourColor = true;
 	else
 		ourColor = false;
-	std::cout << "123456" << endl;
+	std::cout << "123456" << endl;//输出电脑的布局
 	cin >> temp;//输入begin
 	cin >> temp;//输入对手布局
 	for (int i = 0; i < 6; i++)
@@ -399,6 +406,12 @@ int main()
 	string cmd;
 	while (getline(cin,cmd)&&cmd != "stop")
 	{
+		if (cmd == "regret")
+		{
+			History.pop();
+			cur = History.top();
+			continue;
+		}
 		stringstream ss(cmd);
 		if (cur.player == !ourColor)
 		{
@@ -476,5 +489,6 @@ int main()
 			print(Board);
 #endif
 		}
+		History.push(cur);
 	}
 }
