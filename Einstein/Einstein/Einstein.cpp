@@ -16,12 +16,6 @@ const int INF = 10000;
 
 //const int MaxDepth = 4;
 
-const int MIN_SIM = 5;
-const int MAX_SIM = 100;
-const float MAX_UCB = 10000;
-const float UCB_K = 1;
-const int MAX_TIME = 100;
-
 const int redMove[3][2] = {
 	0,1,
 	1,1,
@@ -251,12 +245,10 @@ float Evaluate(situation cur,int piece,int moveNo)
 	{
 		if ((cur.board[nx][ny] > 0) ^ player)
 		{
-			ans += 0.5;//吃掉对面的
+			ans += 0.1;//吃掉对面的
 			if (cur.GetDistance(cur.player, abs(cur.board[nx][ny])) <= 2)
 				ans += 0.5;
 		}
-		else
-			ans -= 0.5;//吃掉自己的
 	}
 
 	float risk=0;
@@ -280,10 +272,10 @@ float Evaluate(situation cur,int piece,int moveNo)
 float MC(situation *cur)
 {
 	float win=0;
-	for (int i = 0; i < 300; i++)
+	for (int i = 0; i < 200; i++)
 		if (simulate(*cur))
 			win++;
-	float p = (float)win / 300;
+	float p = (float)win / 200;
 	return p;
 }
 
@@ -308,7 +300,7 @@ float AlphaBeta(situation cur, int depth, float alpha, float beta)
 				{
 					float eval = Evaluate(cur, piece, moveNo);
 					situation next = situation(cur, piece, moveNo);
-					val = 0.5*AlphaBeta(next, depth - 1, -beta, -alpha) + (eval+0.5)/4;
+					val = 0.5*AlphaBeta(next, depth - 1, -beta, -alpha) + (eval+0.5)/5;
 					if (val >= beta)
 						return beta;
 					if (val > alpha)
@@ -320,21 +312,21 @@ float AlphaBeta(situation cur, int depth, float alpha, float beta)
 	return alpha;
 }
 
-void InitializeBoard(int red[6], int blue[6])
+void InitializeBoard(int layouts[2][6])
 {
-	Board[0][0] = red[0];
-	Board[0][1] = red[1];
-	Board[0][2] = red[2];
-	Board[1][0] = red[3];
-	Board[1][1] = red[4];
-	Board[2][0] = red[5];
+	Board[0][0] = layouts[1][0];
+	Board[0][1] = layouts[1][1];
+	Board[0][2] = layouts[1][2];
+	Board[1][0] = layouts[1][3];
+	Board[1][1] = layouts[1][4];
+	Board[2][0] = layouts[1][5];
 
-	Board[4][4] = -blue[0];
-	Board[4][3] = -blue[1];
-	Board[4][2] = -blue[2];
-	Board[3][4] = -blue[3];
-	Board[3][3] = -blue[4];
-	Board[2][4] = -blue[5];
+	Board[4][4] = -layouts[0][0];
+	Board[4][3] = -layouts[0][1];
+	Board[4][2] = -layouts[0][2];
+	Board[3][4] = -layouts[0][3];
+	Board[3][3] = -layouts[0][4];
+	Board[2][4] = -layouts[0][5];
 }
 
 void print(int board[5][5])
@@ -373,7 +365,7 @@ stack <class situation> History;
 int main()
 {
 	srand(time(NULL));
-	int red[6], blue[6];
+	int layouts[2][6];
 	string temp;
 	cin >> temp;//输入"name?"
 	std::cout << name << endl;//输出名字
@@ -389,14 +381,17 @@ int main()
 		ourColor = false;
 	std::cout << "123456" << endl;//输出电脑的布局
 	cin >> temp;//输入begin
-	cin >> temp;//输入对手布局
+	int layout;
+	cin >> layout;//输入对手布局
 	for (int i = 0; i < 6; i++)
 	{
-		red[i] = i + 1;
-		blue[i] = i+1;
+		layouts[ourColor][i] = i + 1;
+		layouts[!ourColor][5-i] = layout % 10;
+		layout /= 10;
 	}
-	InitializeBoard(red, blue);
+	InitializeBoard(layouts);
 	situation cur=situation(Board,ourColor);
+	History.push(cur);
 #ifdef DEBUG1
 	test(cur);
 #endif
@@ -450,9 +445,9 @@ int main()
 					if (nx >= 0 && ny >= 0 && nx < 5 && ny < 5)
 					{
 						situation next = situation(cur);
-						float eval = Evaluate(cur, piece, j);
+						float eval = Evaluate(cur, pieces[i], j);
 						move(next, pieces[i], j);
-						float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f) + (eval + 0.5) / 4;
+						float val = 0.5*AlphaBeta(next, 5, -5.0f, 5.0f) + (eval + 0.5) / 5;
 #ifdef DEBUG
 						printf("%d %d %f\n", pieces[i],j ,val);
 #endif
