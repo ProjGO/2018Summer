@@ -4,5 +4,5 @@ using namespace std;
 
 class situation
 {
-
+	aa
 };
